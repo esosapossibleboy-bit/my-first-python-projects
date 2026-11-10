@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Esosa's Live AI Portal</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 40px;
+        }
+        .container { max-width: 900px; margin: 0 auto; text-align: center; }
+        h1 { color: #007ACC; margin-bottom: 5px; }
+        .subtitle { color: #888; margin-bottom: 40px; }
+        .input-box {
+            padding: 15px; font-size: 16px; border-radius: 8px; border: 2px solid #333;
+            width: 60%; background-color: #1e1e1e; color: white; outline: none; transition: 0.3s;
+        }
+        .input-box:focus { border-color: #007ACC; }
+        .analyze-btn {
+            padding: 15px 25px; font-size: 16px; background-color: #28a745;
+            color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+        .analyze-btn:hover { background-color: #218838; }
+        #ai-output {
+            margin: 30px auto; padding: 20px; border-radius: 8px;
+            background-color: #1a233a; border-left: 5px solid #007ACC; max-width: 75%; text-align: left; display: none;
+        }
+        h2 { text-align: left; color: #fff; margin-top: 50px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+        .card {
+            background-color: #1e1e1e; padding: 20px; border-radius: 8px; border: 1px solid #2d2d2d;
+            text-align: left; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .card h3 { color: #007ACC; margin-top: 0; font-size: 16px; padding-right: 25px; }
+        .card p { color: #aaa; font-size: 14px; line-height: 1.4; margin-bottom: 15px; }
+        .delete-btn {
+            background-color: #dc3545; color: white; border: none; padding: 6px 12px;
+            border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; align-self: flex-start;
+        }
+        .delete-btn:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🌟 Esosa's Live AI Portal Hub 🌟</h1>
+        <p class="subtitle">Connect directly to an active cloud model stream, map architectures, and prune history logs.</p>
+        
+        <input type="text" id="user-input" class="input-box" placeholder="Type your application concept here...">
+        <button class="analyze-btn" onclick="submitToAI()">Analyze Concept</button>
+
+        <div id="ai-output"></div>
+
+        <h2>📊 Permanent Repository Log</h2>
+        <div id="history-box" class="history-grid"></div>
+    </div>
+
+    <script>
+        window.onload = function() { loadDashboardHistory(); };
+
+        function loadDashboardHistory() {
+            fetch("http://localhost:8000/history")
+            .then(res => res.json())
+            .then(data => {
+                let historyBox = document.getElementById("history-box");
+                historyBox.innerHTML = "";
+                
+                // We map items using their real data order positions so we can trace indices
+                data.forEach((record, originalIndex) => {
+                    let card = document.createElement("div");
+                    card.className = "card";
+                    card.innerHTML = `
+                        <div>
+                            <h3>💡 Concept: ${record.user_input}</h3>
+                            <p>${record.ai_response}</p>
+                        </div>
+                        <button class="delete-btn" onclick="deleteCard(${originalIndex})">Delete Asset</button>
+                    `;
+                    // Prepend inserts new cards at the very top visually!
+                    historyBox.insertBefore(card, historyBox.firstChild);
+                });
+            });
+        }
+
+        function submitToAI() {
+            let typedText = document.getElementById("user-input").value;
+            let aiDisplay = document.getElementById("ai-output");
+            if (!typedText) return;
+
+            aiDisplay.style.display = "block";
+            aiDisplay.innerHTML = "⚡ <em>Streaming live cloud insights... Please wait...</em>";
+
+            fetch("http://localhost:8000/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ idea: typedText })
+            })
+            .then(res => res.json())
+            .then(data => {
+                aiDisplay.innerHTML = `<strong>🤖 Live AI Engine Advice:</strong><br><br>${data.ai_feedback}`;
+                document.getElementById("user-input").value = "";
+                loadDashboardHistory();
+            })
+            .catch(err => { alert("❌ Cloud endpoint disconnected! Check your server app console."); });
+        }
+
+        function deleteCard(targetIndex) {
+            fetch("http://localhost:8000/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ index: targetIndex })
+            })
+            .then(res => res.json())
+            .then(data => {
+                loadDashboardHistory(); // Instantly refresh data layout cards!
+            });
+        }
+    </script>
+
+</body>
+</html>

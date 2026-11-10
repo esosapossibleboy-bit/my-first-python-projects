@@ -1,69 +1,88 @@
-import http.server
-import socketserver
-from urllib.parse import urlparse, parse_qs
+import json
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import nest_asyncio
+import g4f
 
-print("🌐 Initializing Esosa's Clean Analytical Web Server Core... 🌐")
+# Activate the asynchronous bridge safely
+nest_asyncio.apply()
 
-PORT = 8000
-visit_counter = 0
+app = Flask(__name__)
+CORS(app)
 
-class MyWebServer(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        global visit_counter
-        
-        parsed_url = urlparse(self.path)
-        query_parameters = parse_qs(parsed_url.query)
-        
-        visitor_name = "Brave Hero"
-        if "hero_name" in query_parameters:
-            # 🌟 FIXED HERE: Adding [0] strips away the list brackets!
-            visitor_name = query_parameters["hero_name"][0]
-            
-        visit_counter += 1
+print("\n🌐 Aligned to Live AI & Data Purge Engine Core... 🌐")
+print("🚀 SUCCESS! Your server is live at: http://localhost:8000\n")
 
-        html_blueprint = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <title>Esosa's Cloud Server</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; text-align: center; background-color: #f0f8ff; padding-top: 50px; }}
-                h1 {{ color: darkblue; font-size: 40px; }}
-                p {{ font-size: 20px; color: #333; }}
-                .badge {{ background-color: gold; padding: 10px 20px; font-weight: bold; border-radius: 20px; display: inline-block; margin-bottom: 10px; }}
-                .counter-box {{ background-color: #e0f7fa; border: 2px dashed darkcyan; padding: 15px; display: inline-block; font-size: 18px; font-weight: bold; border-radius: 10px; margin-top: 20px; color: darkcyan; }}
-                input {{ padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; width: 250px; }}
-                button {{ padding: 10px 20px; font-size: 16px; background-color: darkblue; color: white; border: none; border-radius: 5px; cursor: pointer; }}
-                button:hover {{ background-color: blue; }}
-            </style>
-        </head>
-        <body>
-            <h1>🌐 Welcome to Esosa's Live Web Server! 🌐</h1>
-            <p>Salutations, <span style="color: purple; font-weight: bold;">{visitor_name}</span>! Welcome to your server node portal.</p>
-            <div class="badge">🚀 Superpower Unlocked: Server State Management</div>
-            
-            <br>
-            <div class="counter-box">
-                📊 Total Portal Hits Tracked: {visit_counter}
-            </div>
-            
-            <div style="margin-top: 30px;">
-                <form method="GET" action="/">
-                    <input type="text" name="hero_name" placeholder="Type your hero name here..." required>
-                    <button type="submit">Cast Portal Spell! ✨</button>
-                </form>
-            </div>
-        </body>
-        </html>
-        """
+def read_ideas_from_file():
+    try:
+        file = open("web_ideas.txt", "r")
+        lines = file.readlines()
+        file.close()
+        ideas = []
+        for line in lines:
+            if line.strip():
+                ideas.append(json.loads(line.strip()))
+        return ideas
+    except:
+        return []
 
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-        self.wfile.write(bytes(html_blueprint, "utf-8"))
+def rewrite_ideas_to_file(ideas_list):
+    file = open("web_ideas.txt", "w")
+    for item in ideas_list:
+        file.write(json.dumps(item) + "\n")
+    file.close()
 
-with socketserver.TCPServer(("", PORT), MyWebServer) as httpd:
-    print(f"🚀 SUCCESS! Your analytics server is live at: http://localhost:{PORT}")
-    print("Press Ctrl + C in the terminal when you want to stop the server.")
-    httpd.serve_forever()
+@app.route("/save", methods=["POST"])
+def save_idea_api():
+    data = request.json
+    user_idea = data.get("idea", "")
+    
+    print(f"🧠 Contacting Live AI Cloud for concept: '{user_idea}'...")
+    
+    try:
+        # Requesting a response from a live online cloud model
+        response = g4f.ChatCompletion.create(
+            model=g4f.models.gpt_4,
+            messages=[{"role": "user", "content": f"Give a brief 2-sentence software engineering advice blueprint for: {user_idea}"}],
+        )
+        # Verify we got a real message back, otherwise use fallback
+        if response and len(str(response).strip()) > 5:
+            ai_feedback = str(response)
+        else:
+            raise Exception("Empty response")
+    except Exception as e:
+        print("⚠️ Cloud network busy, deploying internal AI blueprint helper...")
+        ai_feedback = f"💡 Local Engine: Great concept! To build '{user_idea}', you should design a frontend architecture with HTML/CSS and connect it to a structured backend data manager."
+
+    data_record = {
+        "user_input": user_idea,
+        "ai_response": ai_feedback
+    }
+    
+    file = open("web_ideas.txt", "a")
+    file.write(json.dumps(data_record) + "\n")
+    file.close()
+    
+    return jsonify({"status": "Success", "ai_feedback": ai_feedback})
+
+@app.route("/history", methods=["GET"])
+def get_history_api():
+    return jsonify(read_ideas_from_file())
+
+@app.route("/delete", methods=["POST"])
+def delete_idea_api():
+    data = request.json
+    index_to_delete = data.get("index")
+    
+    current_ideas = read_ideas_from_file()
+    
+    if 0 <= index_to_delete < len(current_ideas):
+        removed = current_ideas.pop(index_to_delete)
+        print(f"🗑️ PURGE WARNING: Erased '{removed['user_input']}' from the repository log.")
+        rewrite_ideas_to_file(current_ideas)
+        return jsonify({"status": "Success", "message": "Item deleted!"})
+    
+    return jsonify({"status": "Error", "message": "Index not found"}), 400
+
+if __name__ == "__main__":
+    app.run(port=8000)
