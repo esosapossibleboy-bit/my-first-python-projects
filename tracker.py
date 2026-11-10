@@ -1,71 +1,79 @@
 import os
 
-print("🗄️ Activating Esosa's Persistent Database Vault... 🗄️")
+print("🗄️ Activating Esosa's Column-Delimited Database Vault... 🗄️")
 
 DB_FILE = "database_vault.txt"
-data_records = []
+data_records = []  # 🌟 FIXED HERE!
 
-# --- 🛰️ THE AUTO-LOAD DATA PIPELINE ---
-# The exact split-second the app turns on, it reaches onto the disk to read your history!
+# --- 🛰️ THE AUTO-LOAD COLUMN SPLITTER PIPELINE ---
 if os.path.exists(DB_FILE):
-    print("🔄 Syncing with local hard drive data cache...")
+    print("🔄 Syncing and parsing local column matrices...")
     with open(DB_FILE, "r", encoding="utf-8") as file:
         for line in file:
             cleaned_line = line.strip()
             if cleaned_line:
-                # Uncouple the text stream back into clean data items!
-                data_records.append(cleaned_line)
+                parts = cleaned_line.split("|")
+                if len(parts) == 3:
+                    data_records.append(parts)
 else:
-    print("📭 No previous database file found. Initializing clean vault matrix.")
+    print("📭 No previous database file found. Initializing clean column matrix.")
 
 # --- MAIN INTERACTIVE CORE LOOP ---
 while True:
     print(f"\n==========================================")
-    print(f"📦 CURRENT VAULT STORAGE: {len(data_records)} RECORDS DETECTED")
+    print(f"📦 CURRENT VAULT STORAGE: {len(data_records)} FLIGHT RECORDS")
     print(f"==========================================")
     
     print("Choose an action: Type 'add', 'view', 'delete', or 'exit':")
     choice = input().lower().strip()
     
     if choice == "exit":
-        # --- 💾 THE AUTO-SAVE SAFETY PIPELINE ---
-        print("\n💾 Saving master database records permanently to disk...")
+        print("\n💾 Compressing and saving column data rows permanently to disk...")
         with open(DB_FILE, "w", encoding="utf-8") as file:
             for record in data_records:
-                file.write(record + "\n")
+                raw_line = "|".join(record)
+                file.write(raw_line + "\n")
         print("🔒 Vault locked and cached safely. Goodbye! 🤫")
         break
         
     elif choice == "add":
-        print("Enter the item or note you want to lock into the database:")
-        new_item = input().strip()
-        if new_item:
-            data_records.append(new_item)
-            print(f"✅ Successfully cached: '{new_item}'")
+        print("Enter Airline Name (e.g., Lufthansa):")
+        airline = input().strip()
+        print("Enter Round-Trip Price (€):")
+        price = input().strip()
+        print("Enter Stops/Layovers (e.g., Nonstop or 1 Stop):")
+        stops = input().strip()
+        
+        if airline and price and stops:
+            data_records.append([airline, price, stops])
+            print(f"✅ Successfully cached row: {airline} | €{price} | {stops}")
             
     elif choice == "view":
         if len(data_records) == 0:
-            print("📭 Your database storage vault is completely empty!")
+            print("📭 Your delimited database vault is completely empty!")
         else:
-            print("\n📜 --- CURRENT DATABASE MASTER MANIFEST --- 📜")
+            print("\n📜 --- CURRENT SPREADSHEET MASTER MANIFEST --- 📜")
+            print("------------------------------------------------------------")
+            print("Slot  | Airline        | Price   | Flight Routing Parameter ")
+            print("------------------------------------------------------------")
             for i in range(len(data_records)):
-                # Print out a clean numbered list tracking index locations
-                print(f" Slot [{i}]: {data_records[i]}")
-            print("--------------------------------------------")
+                row = data_records[i]
+                print(f"[{i}]".ljust(5) + " | " + row[0].ljust(14) + " | €" + row[1].ljust(6) + " | " + row[2])
+            print("------------------------------------------------------------")
             
     elif choice == "delete":
         if len(data_records) == 0:
             print("❌ Nothing to delete! Vault is empty.")
             continue
             
-        print("Enter the Slot number [] you want to incinerate:")
+        print("Enter the Slot number you want to incinerate:")
         try:
             slot_index = int(input())
             if 0 <= slot_index < len(data_records):
-                removed_item = data_records.pop(slot_index)
-                print(f"💥 Successfully incinerated: '{removed_item}' from Slot [{slot_index}]!")
+                removed_row = data_records.pop(slot_index)
+                print(f"💥 Successfully incinerated data row for '{removed_row[0]}' from Slot [{slot_index}]!")
             else:
-                print("⚠️ Invalid Slot number! That slot matrix coordinate does not exist.")
+                print("⚠️ Invalid Slot number! Coordinate out of bounds.")
         except:
             print("❌ Error! You must type a real slot number.")
             
